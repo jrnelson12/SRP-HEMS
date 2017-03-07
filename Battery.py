@@ -6,7 +6,7 @@ data = HEMSData()
 import math
 
 def BatteryParameter(nominalCapacity, nominalVoltage, minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate):
-    maxCapacityAsEnergy = nominalCapacity * nominalVoltage
+    maxCapacityAsEnergy = (nominalCapacity * nominalVoltage)/1000
     minCapacityAsEnergy = maxCapacityAsEnergy * minCapacityAsFractoin
     chargeEfficiency = chargeEff
     dischargeEfficiency = dischargeEff
@@ -21,7 +21,7 @@ def BatteryGetMaximumChargePower(currentCapacity, timestepHourlyFraction, nomina
     (maxCapacityAsEnergy, minCapacityAsEnergy, chargeEfficiency, dischargeEfficiency, maxRatedChargePower, maxRatedDischargePower) = BatteryParameter(nominalCapacity, nominalVoltage, minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate)
 
     #check if max power is bound by available room in battery
-    currentCapacityAsEnergy = currentCapacity * nominalVoltage
+    currentCapacityAsEnergy = (currentCapacity * nominalVoltage)/1000
     maxChargeEnergy = maxCapacityAsEnergy - currentCapacityAsEnergy
 
     maxChargePower = maxChargeEnergy * ( 1.0 / timestepHourlyFraction )  #account for timestep size in converting to power
@@ -41,7 +41,7 @@ def BatteryGetMaximumDischargePower(currentCapacity, timestepHourlyFraction, nom
     (maxCapacityAsEnergy, minCapacityAsEnergy, chargeEfficiency, dischargeEfficiency, maxRatedChargePower, maxRatedDischargePower) = BatteryParameter(nominalCapacity, nominalVoltage, minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate)
 
     #check if max power is bound by available room in battery
-    currentCapacityAsEnergy = currentCapacity * nominalVoltage
+    currentCapacityAsEnergy = (currentCapacity * nominalVoltage)/1000
     maxDischargeEnergy = currentCapacityAsEnergy - minCapacityAsEnergy
 
     maxDischargePower = maxDischargeEnergy * ( 1.0 / timestepHourlyFraction )  #account for timestep size in converting to power
@@ -58,7 +58,7 @@ def BatteryGetMaximumDischargePower(currentCapacity, timestepHourlyFraction, nom
 def BatteryPower(power,currentCapacity, timestepHourlyFraction, nominalCapacity, nominalVoltage,minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate):
     #power has positive convention as output power
     #Calculating current capacity as energy, battery parameters, and charging/discharging constraints
-    currentCapacityAsEnergy = currentCapacity * nominalVoltage
+    currentCapacityAsEnergy = (currentCapacity * nominalVoltage)/1000
     maxCapacityAsEnergy, minCapacityAsEnergy, chargeEfficiency, dischargeEfficiency, maxRatedChargePower, maxRatedDischargePower = BatteryParameter(nominalCapacity, nominalVoltage, minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate)
     maxChargePower, maxChargeEnergy = BatteryGetMaximumChargePower(currentCapacity, timestepHourlyFraction, nominalCapacity, nominalVoltage,minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate)
     maxDischargePower, maxDischargeEnerg = BatteryGetMaximumDischargePower(currentCapacity, timestepHourlyFraction, nominalCapacity, nominalVoltage, minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate)
@@ -92,18 +92,21 @@ def BatteryPower(power,currentCapacity, timestepHourlyFraction, nominalCapacity,
 
     return outputPower, capacityAsEnergy, capacityAsFraction,
 
-def BatteryCapacity(batteryPower, currentCapacity, batteryNominalVoltage, batteryNominalCapacity):   # Calculate battery capacity
+def BatteryCapacity(batteryPower, currentCapacity, batteryNominalVoltage, batteryNominalCapacity, chargeEff, dischargeEff,):   # Calculate battery capacity
     currentCapacityAsEnergy = (currentCapacity * batteryNominalVoltage)/1000
 
     if (batteryPower > 0):  # discharging
-        capacityAsEnergy = currentCapacityAsEnergy - batteryPower
+        capacityAsEnergy = currentCapacityAsEnergy - batteryPower/dischargeEff
+        capacityAsAmpHour = currentCapacity - (batteryPower/batteryNominalVoltage)*1000/dischargeEff
     elif (batteryPower < 0):  # charging
         batteryPower = -1.0 * batteryPower
-        capacityAsEnergy = currentCapacityAsEnergy + batteryPower
+        capacityAsEnergy = currentCapacityAsEnergy + batteryPower*chargeEff
+        capacityAsAmpHour = currentCapacity + (batteryPower / batteryNominalVoltage)*1000*chargeEff
     else:  # no load applied
         capacityAsEnergy = currentCapacityAsEnergy
+        capacityAsAmpHour = currentCapacity
 
     maxCapacityAsEnergy = (batteryNominalCapacity * batteryNominalVoltage)/1000
     capacityAsFraction = capacityAsEnergy / maxCapacityAsEnergy
 
-    return capacityAsEnergy, capacityAsFraction
+    return capacityAsEnergy, capacityAsFraction, capacityAsAmpHour

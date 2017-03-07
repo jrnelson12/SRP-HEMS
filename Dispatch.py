@@ -13,20 +13,24 @@ def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayO
     #run system simulation
 
     #TODO: needs lots of conditional logic here to handle various use cases
-    powerOutputDC = 0;
-    powerOutputAC = 0;
-    batteryPower = 0;
-    EnergyNet = 0;
-    batteryCurrentCapacity = 0;
-    batterySOC = 0;
+    powerOutputDC = 0
+    powerOutputAC = 0
+    batteryPower = 0
+    PVPower = 0
+    EnergyNet = 0
+    batteryCurrentCapacity = currentCapacity
+    batterySOC = 0
+    capacityAsAmpHour = 0
     if type == 'loads':    #no generators or additional loads(vehicle)...battery only charges from solarPV
         totalLoadPower = Load.Load(controllableLoadPower, curtail, uncontrollableLoadPower)
         EnergyNet = totalLoadPower
         powerOutputDC = 0
         powerOutputAC = 0
         batteryPower = 0
+        PVPower = 0
         batteryCurrentCapacity = 0
         batterySOC = 0
+        capacityAsAmpHour = 0
     elif type == 'solarPV & & inverter':  #solar generator
         powerOutputDC = SolarPV.SolarPV(dayOfYear, localTime, timeZone, longitude, latitude, slope, globalHorizontalRadiation, clearnessIndex, DNI,
             timeStepHourlyFraction, DFI, groundReflectance, pvCapacity)
@@ -34,34 +38,44 @@ def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayO
         totalLoadPower = Load.Load(controllableLoadPower, curtail, uncontrollableLoadPower)
         EnergyNet = totalLoadPower - powerOutputAC
         batteryPower = 0
+        PVPower = powerOutputDC
         batteryCurrentCapacity = 0
         batterySOC = 0
+        capacityAsAmpHour = 0
     elif type == 'solarPV & & inverter && battery':   #solar and battery
+        hourOfDay = localTime
         powerOutputDC = SolarPV.SolarPV(dayOfYear, localTime, timeZone, longitude, latitude, slope,
                                         globalHorizontalRadiation, clearnessIndex, DNI,
                                         timeStepHourlyFraction, DFI, groundReflectance, pvCapacity)
         powerOutputAC = Inverter.Inverter(powerOutputDC, inverterEff, pvCapacity, invertCapacity)
         totalLoadPower = Load.Load(controllableLoadPower, curtail, uncontrollableLoadPower)
-        batteryPower = 0
-
         #here is the dispatch logic...
+        # - no solar, use grid to meet load
         # - charge battery with solar
         # - send excess to meet load
         # - discharge battery during TOU period battery to avoid high grid price...assume 12-8PM
 
-        hourOfDay = localTime
-        if ( hourOfDay < startTOU and hourOfDay > stopTOU ): #outside TOU, don't use battery
+        if ( hourOfDay < startTOU or hourOfDay > stopTOU ): #outside TOU, don't use battery
             batteryPower, maxChargeEnergy = Battery.BatteryGetMaximumChargePower(currentCapacity, timeStepHourlyFraction,
                                                                                  nominalCapacity, nominalVoltage, minCapacityAsFractoin,
                                                                                  chargeEff, dischargeEff, maxCRate)
-            if ( batteryPower > 0 ):
+
+            if ( batteryPower > 0 ): #battery has room to be charged
                 powerOutputDC = SolarPV.SolarPV(dayOfYear, localTime, timeZone, longitude, latitude, slope, globalHorizontalRadiation,
                             clearnessIndex, DNI, timeStepHourlyFraction, DFI, groundReflectance, pvCapacity)
                 powerOutputAC = Inverter.Inverter(powerOutputDC, inverterEff, pvCapacity, invertCapacity)
                 batteryPower, maxChargeEnergy = Battery.BatteryGetMaximumChargePower(currentCapacity, timeStepHourlyFraction,
                                                                                      nominalCapacity, nominalVoltage, minCapacityAsFractoin,
                                                                                      chargeEff, dischargeEff, maxCRate)
-                if ( powerOutputDC > batteryPower): #more solar than can put into battery
+                PVPower = powerOutputDC
+                if powerOutputDC <= 0: #no solar just use grid to meet load
+                    batteryPower = 0
+                    powerOutputDC = 0
+                    powerOutputAC = 0
+                    PVPower = 0
+                    totalLoadPower = Load.Load(controllableLoadPower, curtail, uncontrollableLoadPower)
+                    EnergyNet = totalLoadPower
+                elif ( PVPower > batteryPower): #more solar than can put into battery
                     batteryPower = ( -1.0 * batteryPower )  #switch sign so we know it is charging
                     powerOutputDC = powerOutputDC - batteryPower    #send remaining to load
                     powerOutputAC = Inverter.Inverter(powerOutputDC, inverterEff, pvCapacity, invertCapacity)
@@ -69,7 +83,7 @@ def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayO
                     EnergyNet = totalLoadPower - powerOutputAC
                 else: #battery requires all solar power, no solar pushed to loads
                     batteryPower = ( -1.0 * powerOutputDC )
-                    powerOutputDC = batteryPower  # send remaining to load
+                    powerOutputDC = 0  # send remaining to load
                     powerOutputAC = 0
                     totalLoadPower = Load.Load(controllableLoadPower, curtail, uncontrollableLoadPower)
                     EnergyNet = totalLoadPower
@@ -78,6 +92,7 @@ def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayO
                 powerOutputDC = SolarPV.SolarPV(dayOfYear, localTime, timeZone, longitude, latitude, slope,
                                         globalHorizontalRadiation,
                                         clearnessIndex, DNI, timeStepHourlyFraction, DFI, groundReflectance, pvCapacity)
+                PVPower = powerOutputDC
                 powerOutputAC = Inverter.Inverter(powerOutputDC, inverterEff, pvCapacity, invertCapacity)
                 totalLoadPower = Load.Load(controllableLoadPower, curtail, uncontrollableLoadPower)
                 EnergyNet = totalLoadPower - powerOutputAC
@@ -86,6 +101,7 @@ def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayO
             powerOutputDC = SolarPV.SolarPV(dayOfYear, localTime, timeZone, longitude, latitude, slope,
                                     globalHorizontalRadiation,
                                     clearnessIndex, DNI, timeStepHourlyFraction, DFI, groundReflectance, pvCapacity)
+            PVPower = powerOutputDC
             powerOutputAC = Inverter.Inverter(powerOutputDC, inverterEff, pvCapacity, invertCapacity)
             totalLoadPower = Load.Load(controllableLoadPower, curtail, uncontrollableLoadPower)
             EnergyNet = totalLoadPower - powerOutputAC  # send remaining to grid
@@ -137,7 +153,7 @@ def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayO
                     powerOutputAC = Inverter.Inverter(powerOutputDC, inverterEff, pvCapacity, invertCapacity)  # solar output + battery output
                     EnergyNet = totalLoadPower - powerOutputAC
 
-    batteryCurrentCapacity, batterySOC = Battery.BatteryCapacity(batteryPower, currentCapacity, nominalVoltage, nominalCapacity)
+    batteryCurrentCapacity, batterySOC, capacityAsAmpHour = Battery.BatteryCapacity(batteryPower, currentCapacity, nominalVoltage, nominalCapacity, chargeEff, dischargeEff)
 
 
-    return powerOutputDC,powerOutputAC,batteryPower,EnergyNet, batteryCurrentCapacity, batterySOC
+    return powerOutputDC,powerOutputAC,batteryPower,EnergyNet, batteryCurrentCapacity, batterySOC, capacityAsAmpHour, PVPower

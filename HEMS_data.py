@@ -72,6 +72,7 @@ class HEMSDataOutput():
         self.PVPowerOut = 0; #kW
 
         #Inverter
+        self.IPowerIn = 0; #kW
         self.IPowerOut = 0; #kW
 
         #Grid
@@ -80,10 +81,11 @@ class HEMSDataOutput():
         self.GridEnergy = 0; #kWh Energy used from grid
 
         #Battery
-        self.BatteryCurrentCapacity = 0;
+        self.BatteryCapacityAsEnergy = 0;
         self.BatterySOC = 0; #Present SOC of battery
         self.BatteryPower = 0;  #kW (Power used to charge or discharged from battery)
         self.BatteryPowerAllowable = 0; #Allowable power to be used for charging
+
 
         #Load
         self.LoadControllablePowerActual = 0;  # kW Power used by loads that are controllable
