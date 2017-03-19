@@ -3,6 +3,52 @@ class HEMSData():
         self.input = HEMSDataInput()
         self.output = HEMSDataOutput()
 
+    def set_input(self, day, hour, dfi, dni, ghr, ambtemp, KT, gridPrice, controllableLoad, uncontrollableLoad):
+        self.input.DayOfYear = day
+        self.input.LocalTime = hour
+        self.input.DFI = dfi
+        self.input.DNI = dni
+        self.input.GlobalHorizontalRadiation = ghr
+        self.input.AmbientTemp = ambtemp
+        self.input.ClearnessIndex = KT
+        self.input.GridEnergyCost = gridPrice
+        self.input.LoadControllablePower = controllableLoad
+        self.input.LoadUncontrollablePower = uncontrollableLoad
+
+    def prep_for_dispatch(self, hour):
+        return self.input.EnergySystemType,self.input.LoadControllablePower[hour], self.input.LoadCurtailPercent,\
+            self.input.LoadUncontrollablePower[hour], self.input.DayOfYear[hour], self.input.LocalTime[hour],\
+            self.input.TimeZone, self.input.Longitude, self.input.Latitude, self.input.PVSlope,\
+            self.input.GlobalHorizontalRadiation[hour], self.input.ClearnessIndex[hour], self.input.DNI[hour],\
+            self.input.TimeStepHourlyFraction, self.input.DFI[hour], self.input.GroundReflectance,\
+            self.input.Inverterefficeincy, self.input.PVcapacity, self.input.Invertercapacity,\
+            self.input.StartTOU, self.input.StopTOU, self.input.BatteryCurrentCapacity,\
+            self.input.BatteryNominalCapacity, self.input.BatteryMinCapacityAsFraction,\
+            self.input.BatteryChargeEff, self.input.BatteryDischargeEff, self.input.BatteryMaxCRate, self.input.BatteryVoltageNominal
+
+    def set_dispatch_results(self, pvPowerOut, iPowerOut, batteryPower, gridPowerNet, batteryCurrentCapacity, batterySOC):
+        self.output.PVPowerOut = pvPowerOut
+        self.output.IPowerOut = iPowerOut
+        self.output.BatteryPower = batteryPower
+        self.output.GridPowerNet = gridPowerNet
+        self.input.BatteryCurrentCapacity = batteryCurrentCapacity
+        self.output.BatterySOC = batterySOC
+
+    def to_string(self, hour):
+        #Outputs
+        self.output.PVPowerOut = str(self.output.PVPowerOut)
+        self.output.IPowerOut = str(self.output.IPowerOut)
+        self.output.BatteryPower = str(self.output.BatteryPower)
+        self.output.GridPowerNet = str(self.output.GridPowerNet)
+        self.output.BatteryCurrentCapacity = str(self.input.BatteryCurrentCapacity)
+        self.output.BatterySOC = str(self.output.BatterySOC)
+
+        #Inputs
+        self.input.DayOfYear[hour] = str(self.input.DayOfYear[hour])
+        self.input.LocalTime[hour] = str(self.input.LocalTime[hour])
+        self.input.DNI[hour] = str(self.input.DNI[hour])
+        self.input.LoadUncontrollablePower[hour] = str(self.input.LoadUncontrollablePower[hour])
+
 class HEMSDataInput():
     def __init__(self, *args, **kwargs):
 
@@ -88,5 +134,3 @@ class HEMSDataOutput():
         #Load
         self.LoadControllablePowerActual = 0;  # kW Power used by loads that are controllable
         self.LoadPercentCurtail = 0  # Percent of controllable load that is curtailed
-
-
