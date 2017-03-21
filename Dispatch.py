@@ -8,8 +8,11 @@ import Inverter
 import SolarPV
 import Battery
 
-def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayOfYear, localTime, timeZone, longitude, latitude, slope, globalHorizontalRadiation, clearnessIndex, DNI,
-            timeStepHourlyFraction, DFI, groundReflectance, inverterEff, pvCapacity, invertCapacity, startTOU, stopTOU, currentCapacity, nominalCapacity, minCapacityAsFractoin, chargeEff, dischargeEff, maxCRate, nominalVoltage):
+def Dispatch(type, controllableLoadPower, curtail, uncontrollableLoadPower, dayOfYear, localTime, timeZone, longitude, latitude,
+    slope, globalHorizontalRadiation, clearnessIndex, DNI, timeStepHourlyFraction, DFI, groundReflectance, inverterEff,
+    pvCapacity, invertCapacity, startTOU, stopTOU, currentCapacity, nominalCapacity, minCapacityAsFractoin, chargeEff,
+    dischargeEff, maxCRate, nominalVoltage):
+    
     #run system simulation
 
     #TODO: needs lots of conditional logic here to handle various use cases
