@@ -1,6 +1,8 @@
 import csv
 
-def inputs_data(day, hour, dfi, dni, ghi, ambtemp, KT, gridPrice, controllableLoad, uncontrollableLoad):
+def inputs_data():
+    #sets all variables to empty arrays
+    day, hour, dfi, dni, ghi, ambtemp, KT, gridPrice, controllableLoad, uncontrollableLoad = ([],)*10
     HemsInputs = open('HemsInputsWeek11.csv', "rt")
     reader = csv.reader(HemsInputs, delimiter=',')
     rownum = 0

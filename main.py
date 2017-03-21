@@ -2,17 +2,23 @@ from HEMS_data import HEMSData
 data = HEMSData()
 import math
 import Dispatch
-import Input_data
+from Input_data import inputs_data
 class HEMS():
     def __init__(self, *args, **kwargs):
         self.data = HEMSData()
 def main():
+<<<<<<< HEAD
     #Read in data day, hour, dfi, dni, ghi, ambtemp, KT, gridPrice, controllableLoad, uncontrollableLoad
     data.input.DayOfYear, data.input.LocalTime, data.input.DFI, data.input.DNI, data.input.GlobalHorizontalRadiation, data.input.AmbientTemp, \
     data.input.ClearnessIndex, data.input.GridEnergyCost, data.input.LoadControllablePower, data.input.LoadUncontrollablePower\
         = Input_data.inputs_data(data.input.DayOfYear, data.input.LocalTime, data.input.DFI, data.input.DNI, data.input.GlobalHorizontalRadiation, data.input.AmbientTemp,
                                  data.input.ClearnessIndex, data.input.GridEnergyCost, data.input.LoadControllablePower, data.input.LoadUncontrollablePower)
     print(data.input.DNI)
+=======
+    #Read in data
+    data.set_input(*inputs_data())
+
+>>>>>>> 6951d82161b1ed5e6351388f22aa29f3abe0b383
     #Lists to store outputs
     PVPowerOut =[]
     IPowerOut =[]
@@ -29,6 +35,7 @@ def main():
     Load = []
     for hour in range(len(data.input.LocalTime)):
         #Simulate dispatch
+<<<<<<< HEAD
         data.output.IPowerIn, data.output.IPowerOut, data.output.BatteryPower, data.output.GridPowerNet,\
         data.output.BatteryCapacityAsEnergy, data.output.BatterySOC, data.input.BatteryCurrentCapacity, data.output.PVPowerOut = Dispatch.Dispatch(data.input.EnergySystemType,
                                 data.input.LoadControllablePower[hour], data.input.LoadCurtailPercent,
@@ -40,12 +47,17 @@ def main():
                                 data.input.StartTOU, data.input.StopTOU, data.input.BatteryCurrentCapacity,
                                 data.input.BatteryNominalCapacity, data.input.BatteryMinCapacityAsFraction,
                                 data.input.BatteryChargeEff, data.input.BatteryDischargeEff, data.input.BatteryMaxCRate, data.input.BatteryVoltageNominal)
+=======
+>>>>>>> 6951d82161b1ed5e6351388f22aa29f3abe0b383
 
+        dispatch_result = Dispatch.Dispatch(*data.prep_for_dispatch(hour))
+        data.set_dispatch_results(*dispatch_result)
 
         print (data.input.DNI[hour], data.output.PVPowerOut, data.output.IPowerOut, data.output.BatteryPower, data.output.GridPowerNet,
                    data.output.BatteryCapacityAsEnergy, data.output.BatterySOC, data.input.BatteryCurrentCapacity)
 
         # Changing from float to string
+<<<<<<< HEAD
         #Outputs
         data.output.IPowerIn = str(data.output.IPowerIn)
         data.output.IPowerOut = str(data.output.IPowerOut)
